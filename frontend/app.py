@@ -1,10 +1,10 @@
 import sys
-import pandas as pd
 import streamlit as st
 
 sys.path.append(".")
 
 from backend.app.anomaly.detector import load_events, detect_anomalies
+from backend.app.correlation.engine import build_failure_chain
 
 st.set_page_config(page_title="IncidentGPT", layout="wide")
 
@@ -21,9 +21,18 @@ st.subheader("Anomalies Detected")
 anomalies = df[df["is_anomaly"] == True]
 st.dataframe(anomalies)
 
+correlation_result = build_failure_chain(anomalies)
+
+st.subheader("Failure Chain")
+
+for event in correlation_result["failure_chain"]:
+    st.write(
+        f"{event['timestamp']} → **{event['service']}** → "
+        f"{event['metric']} = {event['value']} → {event['message']}"
+    )
+
 st.subheader("Likely Root Cause")
-root_cause = anomalies.iloc[0]["message"] if not anomalies.empty else "No root cause detected"
-st.error(root_cause)
+st.error(correlation_result["summary"])
 
 st.subheader("Suggested Runbook")
 st.write("""
