@@ -30,5 +30,85 @@
     "value": 18,
     "severity": "critical",
     "message": "API Gateway 5xx errors increasing"
+  },
+  {
+    "timestamp": "2026-06-04T10:06:00",
+    "service": "database",
+    "metric": "connection_pool_usage",
+    "value": 65,
+    "severity": "low",
+    "message": "Database connection pool usage normal"
+  },
+  {
+    "timestamp": "2026-06-04T10:07:00",
+    "service": "auth-service",
+    "metric": "latency_ms",
+    "value": 450,
+    "severity": "low",
+    "message": "Authentication requests processing normally"
+  },
+  {
+    "timestamp": "2026-06-04T10:08:00",
+    "service": "payment-service",
+    "metric": "error_rate",
+    "value": 2,
+    "severity": "low",
+    "message": "Payment processing healthy"
+  },
+  {
+    "timestamp": "2026-06-04T10:09:00",
+    "service": "api-gateway",
+    "metric": "5xx_rate",
+    "value": 1,
+    "severity": "low",
+    "message": "Gateway error rate within limits"
+  },
+  {
+    "timestamp": "2026-06-04T10:10:00",
+    "service": "notification-service",
+    "metric": "latency_ms",
+    "value": 250,
+    "severity": "low",
+    "message": "Notification service healthy"
+  },
+  {
+    "timestamp": "2026-06-04T10:11:00",
+    "service": "notification-service",
+    "metric": "latency_ms",
+    "value": 1500,
+    "severity": "high",
+    "message": "Notification delivery latency spike detected"
+  },
+  {
+    "timestamp": "2026-06-04T10:12:00",
+    "service": "database",
+    "metric": "connection_pool_usage",
+    "value": 88,
+    "severity": "high",
+    "message": "Database connection pool nearing saturation"
+  },
+  {
+    "timestamp": "2026-06-04T10:13:00",
+    "service": "payment-service",
+    "metric": "error_rate",
+    "value": 3,
+    "severity": "low",
+    "message": "Payment error rate stable"
+  },
+  {
+    "timestamp": "2026-06-04T10:14:00",
+    "service": "api-gateway",
+    "metric": "5xx_rate",
+    "value": 8,
+    "severity": "high",
+    "message": "Gateway experiencing elevated 5xx responses"
+  },
+  {
+    "timestamp": "2026-06-04T10:15:00",
+    "service": "auth-service",
+    "metric": "latency_ms",
+    "value": 750,
+    "severity": "medium",
+    "message": "Authentication latency elevated but acceptable"
   }
 ]

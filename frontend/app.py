@@ -5,6 +5,7 @@ sys.path.append(".")
 
 from backend.app.anomaly.detector import load_events, detect_anomalies
 from backend.app.correlation.engine import build_failure_chain
+from backend.app.rca.generator import generate_rca_report
 
 st.set_page_config(page_title="IncidentGPT", layout="wide")
 
@@ -22,6 +23,7 @@ anomalies = df[df["is_anomaly"] == True]
 st.dataframe(anomalies)
 
 correlation_result = build_failure_chain(anomalies)
+rca_report = generate_rca_report(correlation_result)
 
 st.subheader("Failure Chain")
 
@@ -42,3 +44,19 @@ st.write("""
 4. Scale database connection pool.
 5. Validate payment-service error rate recovery.
 """)
+
+st.subheader("RCA Report")
+
+st.markdown("### Incident Summary")
+st.info(rca_report["incident_summary"])
+
+st.markdown("### Business Impact")
+st.warning(rca_report["business_impact"])
+
+st.markdown("### Evidence")
+for item in rca_report["evidence"]:
+    st.code(item)
+
+st.markdown("### Next Actions")
+for action in rca_report["next_actions"]:
+    st.write(f"- {action}")
