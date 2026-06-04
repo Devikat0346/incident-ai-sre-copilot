@@ -22,6 +22,19 @@ st.subheader("Anomalies Detected")
 anomalies = df[df["is_anomaly"] == True]
 st.dataframe(anomalies)
 
+st.subheader("Anomaly Score by Service")
+
+score_df = df[["timestamp", "service", "metric", "value", "threshold", "is_anomaly"]].copy()
+
+score_df["anomaly_score"] = score_df["value"] / score_df["threshold"]
+score_df["label"] = score_df["service"] + " - " + score_df["metric"]
+
+st.caption("Anomaly score = actual value divided by threshold. Scores above 1.0 are anomalous.")
+
+st.bar_chart(
+    score_df.set_index("label")["anomaly_score"]
+)
+
 correlation_result = build_failure_chain(anomalies)
 rca_report = generate_rca_report(correlation_result)
 
