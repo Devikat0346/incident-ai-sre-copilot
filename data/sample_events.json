@@ -1,0 +1,34 @@
+[
+  {
+    "timestamp": "2026-06-04T10:00:00",
+    "service": "database",
+    "metric": "connection_pool_usage",
+    "value": 95,
+    "severity": "high",
+    "message": "Database connection pool usage exceeded threshold"
+  },
+  {
+    "timestamp": "2026-06-04T10:02:00",
+    "service": "auth-service",
+    "metric": "latency_ms",
+    "value": 1800,
+    "severity": "high",
+    "message": "Auth service latency spike detected"
+  },
+  {
+    "timestamp": "2026-06-04T10:04:00",
+    "service": "payment-service",
+    "metric": "error_rate",
+    "value": 12,
+    "severity": "critical",
+    "message": "Payment service authentication failures increasing"
+  },
+  {
+    "timestamp": "2026-06-04T10:05:00",
+    "service": "api-gateway",
+    "metric": "5xx_rate",
+    "value": 18,
+    "severity": "critical",
+    "message": "API Gateway 5xx errors increasing"
+  }
+]
