@@ -3,6 +3,7 @@ import streamlit as st
 
 sys.path.append(".")
 
+from backend.app.severity.scorer import calculate_severity
 from backend.app.anomaly.detector import load_events, detect_anomalies
 from backend.app.correlation.engine import build_failure_chain
 from backend.app.rca.generator import generate_rca_report
@@ -34,6 +35,15 @@ st.caption("Anomaly score = actual value divided by threshold. Scores above 1.0 
 st.bar_chart(
     score_df.set_index("label")["anomaly_score"]
 )
+
+df["anomaly_score"] = df["value"] / df["threshold"]
+anomalies = df[df["is_anomaly"] == True]
+
+severity, severity_score = calculate_severity(anomalies)
+
+st.subheader("Incident Severity")
+st.metric("Severity", severity)
+st.metric("Severity Score", severity_score)
 
 correlation_result = build_failure_chain(anomalies)
 rca_report = generate_rca_report(correlation_result)
