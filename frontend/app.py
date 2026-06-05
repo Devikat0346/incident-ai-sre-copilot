@@ -12,6 +12,7 @@ sys.path.append(".")
 from backend.app.tickets.generator import generate_ticket
 from backend.app.severity.scorer import calculate_severity
 from backend.app.anomaly.detector import load_events, detect_anomalies
+from backend.app.anomaly.ml_detector import detect_ml_anomalies, evaluate_ml_detector
 from backend.app.correlation.engine import build_failure_chain
 from backend.app.rca.generator import generate_rca_report
 
@@ -36,13 +37,27 @@ selected_data_file = st.sidebar.selectbox(
 
 df = load_events(str(selected_data_file))
 df = detect_anomalies(df)
+df = detect_ml_anomalies(df)
 
 st.subheader("Incident Timeline")
 st.dataframe(df)
 
-st.subheader("Anomalies Detected")
+st.subheader("Threshold Anomalies Detected")
 anomalies = df[df["is_anomaly"] == True]
 st.dataframe(anomalies)
+
+st.subheader("ML Anomalies Detected")
+ml_anomalies = df[df["ml_is_anomaly"] == True]
+st.dataframe(ml_anomalies)
+
+ml_evaluation = evaluate_ml_detector(df)
+if ml_evaluation:
+    st.subheader("ML Model Evaluation")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Precision", ml_evaluation["precision"])
+    col2.metric("Recall", ml_evaluation["recall"])
+    col3.metric("F1", ml_evaluation["f1"])
+    st.json(ml_evaluation["confusion_matrix"])
 
 st.subheader("Anomaly Score by Service")
 
@@ -56,6 +71,13 @@ st.caption("Anomaly score = actual value divided by threshold. Scores above 1.0 
 st.bar_chart(
     score_df.set_index("label")["anomaly_score"]
 )
+
+st.subheader("ML Anomaly Score by Service")
+ml_score_df = df[["service", "metric", "ml_anomaly_score"]].copy()
+ml_score_df["label"] = ml_score_df["service"] + " - " + ml_score_df["metric"]
+ml_score_df = ml_score_df.sort_values("ml_anomaly_score", ascending=False).head(25)
+st.caption("Higher ML anomaly scores are more unusual according to Isolation Forest.")
+st.bar_chart(ml_score_df.set_index("label")["ml_anomaly_score"])
 
 df["anomaly_score"] = df["value"] / df["threshold"]
 anomalies = df[df["is_anomaly"] == True]
