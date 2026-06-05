@@ -8,6 +8,7 @@ An AI-powered SRE copilot that detects anomalies from observability events, corr
 - Threshold-based anomaly detection
 - Isolation Forest anomaly detection with model evaluation
 - DBSCAN incident clustering for related alerts
+- Graph analytics for blast radius, propagation paths, and service risk
 - Service correlation engine
 - RCA report generator
 - Sample observability dataset
@@ -25,6 +26,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 streamlit run frontend/app.py
+```
 
 ## Generate Synthetic Telemetry
 
@@ -57,6 +59,12 @@ The sidebar lists distinct dataset sizes; `synthetic_events.json` is the same
 ML anomalies are grouped with DBSCAN so related alerts can be viewed as incident
 clusters. The dashboard shows cluster counts, impacted services, likely labels,
 and the alerts within each cluster.
+
+## Graph Analytics
+
+Incident clusters are analyzed against the service dependency graph to estimate
+the probable origin service, calculate blast radius, identify failure propagation
+paths, rank critical services, and calculate betweenness centrality.
 
 ## Test
 
