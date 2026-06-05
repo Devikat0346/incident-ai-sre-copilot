@@ -17,6 +17,7 @@ from backend.app.clustering.incident_clusterer import cluster_incidents, summari
 from backend.app.correlation.engine import build_failure_chain
 from backend.app.graph.analytics import analyze_incident_cluster, rank_service_risk
 from backend.app.rca.generator import generate_rca_report
+from backend.app.rca.llm_generator import build_rca_context, generate_llm_rca_report
 
 st.set_page_config(page_title="IncidentGPT", layout="wide")
 
@@ -50,6 +51,9 @@ with st.spinner(f"Loading {selected_data_file.name}..."):
     df = cluster_incidents(df)
 
 cluster_summary = summarize_clusters(df)
+selected_cluster = None
+cluster_events = None
+graph_analysis = None
 
 st.subheader("Dataset Overview")
 overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
@@ -164,20 +168,44 @@ st.write("""
 """)
 
 st.subheader("RCA Report")
+rca_mode = st.radio("RCA Mode", ["Template", "AI Draft"], horizontal=True)
 
-st.markdown("### Incident Summary")
-st.info(rca_report["incident_summary"])
+if rca_mode == "AI Draft" and cluster_events is not None:
+    rca_context = build_rca_context(cluster_events, graph_analysis or {}, severity, severity_score)
+    ai_rca_report = generate_llm_rca_report(rca_context)
 
-st.markdown("### Business Impact")
-st.warning(rca_report["business_impact"])
+    st.markdown("### Executive Summary")
+    st.info(ai_rca_report["executive_summary"])
 
-st.markdown("### Evidence")
-for item in rca_report["evidence"]:
-    st.code(item)
+    st.markdown("### Business Impact")
+    st.warning(ai_rca_report["business_impact"])
 
-st.markdown("### Next Actions")
-for action in rca_report["next_actions"]:
-    st.write(f"- {action}")
+    st.markdown("### Technical RCA")
+    st.write(ai_rca_report["technical_rca"])
+
+    st.markdown("### Evidence")
+    for item in ai_rca_report["evidence"]:
+        st.json(item)
+
+    st.markdown("### Remediation Steps")
+    for action in ai_rca_report["remediation_steps"]:
+        st.write(f"- {action}")
+elif rca_mode == "AI Draft":
+    st.info("Select an incident cluster to generate an AI RCA draft.")
+else:
+    st.markdown("### Incident Summary")
+    st.info(rca_report["incident_summary"])
+
+    st.markdown("### Business Impact")
+    st.warning(rca_report["business_impact"])
+
+    st.markdown("### Evidence")
+    for item in rca_report["evidence"]:
+        st.code(item)
+
+    st.markdown("### Next Actions")
+    for action in rca_report["next_actions"]:
+        st.write(f"- {action}")
 
 st.subheader("Mock Incident Ticket")
 
