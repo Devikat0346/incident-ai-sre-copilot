@@ -16,6 +16,7 @@ from backend.app.anomaly.ml_detector import detect_ml_anomalies, evaluate_ml_det
 from backend.app.clustering.incident_clusterer import cluster_incidents, summarize_clusters
 from backend.app.correlation.engine import build_failure_chain
 from backend.app.graph.analytics import analyze_incident_cluster, rank_service_risk
+from backend.app.prediction.root_cause_predictor import evaluate_root_cause_model, predict_root_cause
 from backend.app.rca.generator import generate_rca_report
 from backend.app.rca.llm_generator import build_rca_context, generate_llm_rca_report
 
@@ -88,6 +89,19 @@ if ml_evaluation:
     col3.metric("F1", ml_evaluation["f1"])
     st.json(ml_evaluation["confusion_matrix"])
 
+root_cause_evaluation = evaluate_root_cause_model(df)
+if root_cause_evaluation:
+    st.subheader("Root Cause Model Evaluation")
+    eval_col1, eval_col2 = st.columns(2)
+    eval_col1.metric("Accuracy", root_cause_evaluation["accuracy"])
+    eval_col2.metric("Macro F1", root_cause_evaluation["macro_f1"])
+    st.json(
+        {
+            "labels": root_cause_evaluation["labels"],
+            "confusion_matrix": root_cause_evaluation["confusion_matrix"],
+        }
+    )
+
 st.subheader("Incident Clusters")
 if cluster_summary.empty:
     st.info("No incident clusters detected.")
@@ -114,6 +128,16 @@ else:
             st.write(" -> ".join(path))
     else:
         st.info("No dependency-based propagation path found for this cluster.")
+
+    root_cause_prediction = predict_root_cause(cluster_events, df)
+    st.subheader("Root Cause Prediction")
+    if root_cause_prediction:
+        pred_col1, pred_col2 = st.columns(2)
+        pred_col1.metric("Predicted Root Cause", root_cause_prediction["predicted_root_cause"])
+        pred_col2.metric("Confidence", root_cause_prediction["confidence"])
+        st.json(root_cause_prediction["class_probabilities"])
+    else:
+        st.info("Root cause prediction requires labeled synthetic incident data.")
 
 st.subheader("Anomaly Score by Service")
 
