@@ -15,6 +15,7 @@ from backend.app.anomaly.detector import load_events, detect_anomalies
 from backend.app.anomaly.ml_detector import detect_ml_anomalies, evaluate_ml_detector
 from backend.app.clustering.incident_clusterer import cluster_incidents, summarize_clusters
 from backend.app.correlation.engine import build_failure_chain
+from backend.app.graph.analytics import analyze_incident_cluster, rank_service_risk
 from backend.app.rca.generator import generate_rca_report
 
 st.set_page_config(page_title="IncidentGPT", layout="wide")
@@ -95,6 +96,20 @@ else:
     )
     cluster_events = df[df["incident_cluster_id"] == selected_cluster]
     st.dataframe(cluster_events)
+
+    graph_analysis = analyze_incident_cluster(cluster_events)
+    st.subheader("Cluster Graph Analysis")
+    graph_col1, graph_col2, graph_col3 = st.columns(3)
+    graph_col1.metric("Probable Origin", graph_analysis["probable_root_service"] or "Unknown")
+    graph_col2.metric("Affected Services", len(graph_analysis["affected_services"]))
+    graph_col3.metric("Blast Radius", len(graph_analysis["blast_radius"]))
+
+    if graph_analysis["propagation_paths"]:
+        st.markdown("#### Failure Propagation Paths")
+        for path in graph_analysis["propagation_paths"]:
+            st.write(" -> ".join(path))
+    else:
+        st.info("No dependency-based propagation path found for this cluster.")
 
 st.subheader("Anomaly Score by Service")
 
@@ -182,20 +197,31 @@ if st.button("Create Incident Ticket"):
 st.subheader("Service Dependency Graph")
 
 graph = build_service_graph()
+service_risk = rank_service_risk(graph)
+
+st.subheader("Service Risk Ranking")
+st.dataframe(service_risk)
+if not service_risk.empty:
+    st.metric("Most Critical Service", service_risk.iloc[0]["service"])
 
 fig, ax = plt.subplots(figsize=(8, 5))
 
 pos = nx.spring_layout(graph, seed=42)
+risk_by_service = service_risk.set_index("service")["risk_score"].to_dict()
+node_risk = [risk_by_service.get(node, 0) for node in graph.nodes()]
+node_sizes = [1800 + (risk_by_service.get(node, 0) * 3200) for node in graph.nodes()]
 
 nx.draw(
     graph,
     pos,
     with_labels=True,
-    node_size=3000,
+    node_size=node_sizes,
+    node_color=node_risk,
+    cmap=plt.cm.YlOrRd,
     font_size=9,
     arrows=True,
     ax=ax
 )
 
 st.pyplot(fig)
-st.caption("Service call relationships used for incident correlation.")
+st.caption("Arrows point from a caller to its dependency. Larger, warmer nodes have higher operational risk.")
