@@ -3,6 +3,8 @@ import streamlit as st
 
 sys.path.append(".")
 
+from backend.app.graph.dependency_graph import get_dependency_edges
+from backend.app.tickets.generator import generate_ticket
 from backend.app.severity.scorer import calculate_severity
 from backend.app.anomaly.detector import load_events, detect_anomalies
 from backend.app.correlation.engine import build_failure_chain
@@ -83,3 +85,25 @@ for item in rca_report["evidence"]:
 st.markdown("### Next Actions")
 for action in rca_report["next_actions"]:
     st.write(f"- {action}")
+
+st.subheader("Mock Incident Ticket")
+
+if st.button("Create Incident Ticket"):
+    impacted_services = anomalies["service"].unique().tolist()
+    root_cause = anomalies.iloc[0]["message"] if not anomalies.empty else "No active incident"
+
+    ticket = generate_ticket(
+        severity,
+        severity_score,
+        root_cause,
+        impacted_services
+    )
+
+    st.json(ticket)
+
+st.subheader("Service Dependency Graph")
+
+edges = get_dependency_edges()
+
+for source, target in edges:
+    st.write(f"{source} → {target}")
