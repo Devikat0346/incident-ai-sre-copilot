@@ -70,8 +70,10 @@ def detect_ml_anomalies(df, contamination=0.08, random_state=42):
     features = _prepare_features(result)
     detector = build_ml_detector(contamination=contamination, random_state=random_state)
 
-    ml_prediction = detector.fit_predict(features)
-    ml_score = -detector.decision_function(features)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="is_sparse is deprecated.*", category=DeprecationWarning)
+        ml_prediction = detector.fit_predict(features)
+        ml_score = -detector.decision_function(features)
 
     result["ml_prediction"] = ml_prediction
     result["ml_is_anomaly"] = ml_prediction == -1

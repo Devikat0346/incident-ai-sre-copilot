@@ -7,6 +7,7 @@ An AI-powered SRE copilot that detects anomalies from observability events, corr
 - Streamlit dashboard for incident timeline
 - Threshold-based anomaly detection
 - Isolation Forest anomaly detection with model evaluation
+- DBSCAN incident clustering for related alerts
 - Service correlation engine
 - RCA report generator
 - Sample observability dataset
@@ -48,6 +49,14 @@ sidebar when the files exist.
 The dashboard runs threshold detection and Isolation Forest detection side by side.
 For synthetic datasets, ML results are evaluated against `known_anomaly` labels and
 shown with precision, recall, F1, and a confusion matrix.
+The sidebar lists distinct dataset sizes; `synthetic_events.json` is the same
+1,000-row default export as `synthetic_events_1000.json`.
+
+## Incident Clustering
+
+ML anomalies are grouped with DBSCAN so related alerts can be viewed as incident
+clusters. The dashboard shows cluster counts, impacted services, likely labels,
+and the alerts within each cluster.
 
 ## Test
 
