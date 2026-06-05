@@ -9,7 +9,6 @@ import networkx as nx
 from backend.app.graph.dependency_graph import build_service_graph
 sys.path.append(".")
 
-from backend.app.graph.dependency_graph import get_dependency_edges
 from backend.app.tickets.generator import generate_ticket
 from backend.app.severity.scorer import calculate_severity
 from backend.app.anomaly.detector import load_events, detect_anomalies
@@ -21,7 +20,21 @@ st.set_page_config(page_title="IncidentGPT", layout="wide")
 st.title("IncidentGPT: AI SRE Copilot")
 st.caption("Local MVP for anomaly detection, correlation, and RCA generation")
 
-df = load_events()
+data_files = [
+    Path("data/sample_events.json"),
+    Path("data/synthetic_events.json"),
+    Path("data/synthetic_events_1000.json"),
+    Path("data/synthetic_events_5000.json"),
+    Path("data/synthetic_events_10000.json"),
+]
+available_data_files = [path for path in data_files if path.exists()]
+selected_data_file = st.sidebar.selectbox(
+    "Dataset",
+    available_data_files,
+    format_func=lambda path: path.name,
+)
+
+df = load_events(str(selected_data_file))
 df = detect_anomalies(df)
 
 st.subheader("Incident Timeline")
@@ -60,8 +73,8 @@ st.subheader("Failure Chain")
 
 for event in correlation_result["failure_chain"]:
     st.write(
-        f"{event['timestamp']} → **{event['service']}** → "
-        f"{event['metric']} = {event['value']} → {event['message']}"
+        f"{event['timestamp']} -> **{event['service']}** -> "
+        f"{event['metric']} = {event['value']} -> {event['message']}"
     )
 
 st.subheader("Likely Root Cause")
