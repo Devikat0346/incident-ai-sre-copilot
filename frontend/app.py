@@ -1,6 +1,12 @@
 import sys
-import streamlit as st
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR))
+import streamlit as st
+import matplotlib.pyplot as plt
+import networkx as nx
+from backend.app.graph.dependency_graph import build_service_graph
 sys.path.append(".")
 
 from backend.app.graph.dependency_graph import get_dependency_edges
@@ -103,7 +109,21 @@ if st.button("Create Incident Ticket"):
 
 st.subheader("Service Dependency Graph")
 
-edges = get_dependency_edges()
+graph = build_service_graph()
 
-for source, target in edges:
-    st.write(f"{source} → {target}")
+fig, ax = plt.subplots(figsize=(8, 5))
+
+pos = nx.spring_layout(graph, seed=42)
+
+nx.draw(
+    graph,
+    pos,
+    with_labels=True,
+    node_size=3000,
+    font_size=9,
+    arrows=True,
+    ax=ax
+)
+
+st.pyplot(fig)
+st.caption("Service call relationships used for incident correlation.")
