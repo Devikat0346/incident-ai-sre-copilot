@@ -13,6 +13,7 @@ from backend.app.tickets.generator import generate_ticket
 from backend.app.severity.scorer import calculate_severity
 from backend.app.anomaly.detector import load_events, detect_anomalies
 from backend.app.anomaly.ml_detector import detect_ml_anomalies, evaluate_ml_detector
+from backend.app.clustering.incident_clusterer import cluster_incidents, summarize_clusters
 from backend.app.correlation.engine import build_failure_chain
 from backend.app.rca.generator import generate_rca_report
 
@@ -21,9 +22,14 @@ st.set_page_config(page_title="IncidentGPT", layout="wide")
 st.title("IncidentGPT: AI SRE Copilot")
 st.caption("Local MVP for anomaly detection, correlation, and RCA generation")
 
+dataset_labels = {
+    "sample_events.json": "Sample events (14 rows)",
+    "synthetic_events_1000.json": "Synthetic events (1,000 rows)",
+    "synthetic_events_5000.json": "Synthetic events (5,000 rows)",
+    "synthetic_events_10000.json": "Synthetic events (10,000 rows)",
+}
 data_files = [
     Path("data/sample_events.json"),
-    Path("data/synthetic_events.json"),
     Path("data/synthetic_events_1000.json"),
     Path("data/synthetic_events_5000.json"),
     Path("data/synthetic_events_10000.json"),
@@ -32,12 +38,30 @@ available_data_files = [path for path in data_files if path.exists()]
 selected_data_file = st.sidebar.selectbox(
     "Dataset",
     available_data_files,
-    format_func=lambda path: path.name,
+    format_func=lambda path: dataset_labels.get(path.name, path.name),
 )
+st.sidebar.caption("`synthetic_events.json` is the default 1,000-row export and is hidden here to avoid duplicate choices.")
 
-df = load_events(str(selected_data_file))
-df = detect_anomalies(df)
-df = detect_ml_anomalies(df)
+with st.spinner(f"Loading {selected_data_file.name}..."):
+    df = load_events(str(selected_data_file))
+    df = detect_anomalies(df)
+    df = detect_ml_anomalies(df)
+    df = cluster_incidents(df)
+
+cluster_summary = summarize_clusters(df)
+
+st.subheader("Dataset Overview")
+overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
+overview_col1.metric("Dataset", selected_data_file.name)
+overview_col2.metric("Rows", f"{len(df):,}")
+overview_col3.metric("Threshold Anomalies", f"{int(df['is_anomaly'].sum()):,}")
+overview_col4.metric("ML Anomalies", f"{int(df['ml_is_anomaly'].sum()):,}")
+
+time_range = ""
+if "timestamp" in df and not df.empty:
+    timestamps = df["timestamp"].astype(str)
+    time_range = f"{timestamps.iloc[0]} -> {timestamps.iloc[-1]}"
+st.caption(f"Selected dataset: `{selected_data_file}` | Time range: {time_range or 'Unavailable'}")
 
 st.subheader("Incident Timeline")
 st.dataframe(df)
@@ -58,6 +82,19 @@ if ml_evaluation:
     col2.metric("Recall", ml_evaluation["recall"])
     col3.metric("F1", ml_evaluation["f1"])
     st.json(ml_evaluation["confusion_matrix"])
+
+st.subheader("Incident Clusters")
+if cluster_summary.empty:
+    st.info("No incident clusters detected.")
+else:
+    st.dataframe(cluster_summary)
+
+    selected_cluster = st.selectbox(
+        "Cluster Details",
+        cluster_summary["incident_cluster_id"].tolist(),
+    )
+    cluster_events = df[df["incident_cluster_id"] == selected_cluster]
+    st.dataframe(cluster_events)
 
 st.subheader("Anomaly Score by Service")
 
