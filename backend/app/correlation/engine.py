@@ -35,7 +35,7 @@ def build_failure_chain(anomalies_df: pd.DataFrame):
 
     summary = (
         f"The earliest anomaly was detected in {root_service}. "
-        f"Failures then propagated across: {' → '.join(impacted_services)}. "
+        f"Failures then propagated across: {' -> '.join(impacted_services)}. "
         f"Likely root cause: {root_event['message']}."
     )
 

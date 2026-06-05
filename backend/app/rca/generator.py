@@ -33,7 +33,7 @@ def generate_rca_report(correlation_result):
 
     incident_summary = (
         f"IncidentGPT detected a cascading failure starting from {root_service}. "
-        f"The failure propagated through {' → '.join(impacted_services)}. "
+        f"The failure propagated through {' -> '.join(impacted_services)}. "
         f"The likely root cause is: {first_event['message']}."
     )
 

@@ -5,7 +5,10 @@ THRESHOLDS = {
     "connection_pool_usage": 80,
     "latency_ms": 1000,
     "error_rate": 5,
-    "5xx_rate": 5
+    "5xx_rate": 5,
+    "cpu_usage": 85,
+    "memory_usage": 90,
+    "queue_depth": 250
 }
 
 def load_events(file_path="data/sample_events.json"):
