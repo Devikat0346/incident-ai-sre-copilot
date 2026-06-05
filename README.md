@@ -9,6 +9,8 @@ An AI-powered SRE copilot that detects anomalies from observability events, corr
 - Isolation Forest anomaly detection with model evaluation
 - DBSCAN incident clustering for related alerts
 - Graph analytics for blast radius, propagation paths, and service risk
+- AI-draft RCA generation from incident clusters and graph context
+- Random Forest root-cause prediction from labeled incident telemetry
 - Service correlation engine
 - RCA report generator
 - Sample observability dataset
@@ -65,6 +67,20 @@ and the alerts within each cluster.
 Incident clusters are analyzed against the service dependency graph to estimate
 the probable origin service, calculate blast radius, identify failure propagation
 paths, rank critical services, and calculate betweenness centrality.
+
+## AI RCA Generation
+
+The dashboard can generate an AI-style RCA draft for a selected incident cluster.
+The draft uses clustered anomaly evidence, probable origin service, blast radius,
+propagation paths, severity, and affected services. The existing template RCA
+remains available as a fallback mode.
+
+## Root Cause Prediction
+
+Synthetic incident labels are used to train a Random Forest classifier that
+predicts the most likely root cause for a selected incident cluster. The dashboard
+shows predicted root cause, confidence, class probabilities, accuracy, macro F1,
+and a confusion matrix when labeled synthetic data is selected.
 
 ## Test
 
