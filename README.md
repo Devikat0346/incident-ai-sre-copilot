@@ -10,6 +10,7 @@ An AI-powered SRE copilot that detects anomalies from observability events, corr
 - DBSCAN incident clustering for related alerts
 - Graph analytics for blast radius, propagation paths, and service risk
 - AI-draft RCA generation from incident clusters and graph context
+- Optional OpenAI-compatible and Ollama RCA providers with local fallback
 - Random Forest root-cause prediction from labeled incident telemetry
 - Service correlation engine
 - RCA report generator
@@ -74,6 +75,28 @@ The dashboard can generate an AI-style RCA draft for a selected incident cluster
 The draft uses clustered anomaly evidence, probable origin service, blast radius,
 propagation paths, severity, and affected services. The existing template RCA
 remains available as a fallback mode.
+
+By default, RCA generation uses the local deterministic draft generator. The
+sidebar can also route AI RCA generation to an OpenAI-compatible API or a local
+Ollama server.
+
+OpenAI-compatible provider:
+
+```bash
+export OPENAI_API_KEY=your_api_key
+export OPENAI_MODEL=gpt-4o-mini
+export OPENAI_BASE_URL=https://api.openai.com/v1
+```
+
+Ollama provider:
+
+```bash
+export OLLAMA_MODEL=llama3.1
+export OLLAMA_BASE_URL=http://localhost:11434
+```
+
+If a configured provider fails, the dashboard keeps working and shows the local
+RCA draft as a fallback.
 
 ## Root Cause Prediction
 
