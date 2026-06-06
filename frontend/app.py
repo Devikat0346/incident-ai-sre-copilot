@@ -19,6 +19,12 @@ from backend.app.graph.analytics import analyze_incident_cluster, rank_service_r
 from backend.app.prediction.root_cause_predictor import evaluate_root_cause_model, predict_root_cause
 from backend.app.rca.generator import generate_rca_report
 from backend.app.rca.llm_generator import build_rca_context, generate_llm_rca_report
+from backend.app.rca.provider import (
+    RcaProviderConfig,
+    RcaProviderError,
+    get_default_provider_config,
+    generate_rca_with_provider,
+)
 
 st.set_page_config(page_title="IncidentGPT", layout="wide")
 
@@ -44,6 +50,44 @@ selected_data_file = st.sidebar.selectbox(
     format_func=lambda path: dataset_labels.get(path.name, path.name),
 )
 st.sidebar.caption("`synthetic_events.json` is the default 1,000-row export and is hidden here to avoid duplicate choices.")
+
+rca_provider_label = st.sidebar.selectbox(
+    "AI RCA Provider",
+    ["Local Draft", "OpenAI-compatible", "Ollama"],
+)
+rca_provider_key = {
+    "Local Draft": "local",
+    "OpenAI-compatible": "openai",
+    "Ollama": "ollama",
+}[rca_provider_label]
+default_rca_provider_config = get_default_provider_config(rca_provider_key)
+rca_provider_model = None
+rca_provider_base_url = None
+rca_provider_api_key = None
+
+if rca_provider_key != "local":
+    rca_provider_model = st.sidebar.text_input(
+        "RCA Model",
+        value=default_rca_provider_config.model or "",
+    )
+    rca_provider_base_url = st.sidebar.text_input(
+        "RCA Base URL",
+        value=default_rca_provider_config.base_url or "",
+    )
+
+if rca_provider_key == "openai":
+    rca_provider_api_key = st.sidebar.text_input(
+        "OpenAI API Key",
+        value=default_rca_provider_config.api_key or "",
+        type="password",
+    )
+
+rca_provider_config = RcaProviderConfig(
+    provider=rca_provider_key,
+    model=rca_provider_model or default_rca_provider_config.model,
+    base_url=rca_provider_base_url or default_rca_provider_config.base_url,
+    api_key=rca_provider_api_key or default_rca_provider_config.api_key,
+)
 
 with st.spinner(f"Loading {selected_data_file.name}..."):
     df = load_events(str(selected_data_file))
@@ -196,9 +240,19 @@ rca_mode = st.radio("RCA Mode", ["Template", "AI Draft"], horizontal=True)
 
 if rca_mode == "AI Draft" and cluster_events is not None:
     rca_context = build_rca_context(cluster_events, graph_analysis or {}, severity, severity_score)
-    ai_rca_report = generate_llm_rca_report(rca_context)
+    if rca_provider_key == "openai" and not rca_provider_config.api_key:
+        st.info("Enter an OpenAI API key in the sidebar, or switch the AI RCA Provider to Local Draft.")
+        ai_rca_report = generate_llm_rca_report(rca_context)
+    else:
+        try:
+            ai_rca_report = generate_rca_with_provider(rca_context, rca_provider_config)
+        except RcaProviderError as exc:
+            st.warning(f"{rca_provider_label} RCA generation was unavailable: {exc}")
+            st.caption("Showing the local deterministic RCA draft instead.")
+            ai_rca_report = generate_llm_rca_report(rca_context)
 
     st.markdown("### Executive Summary")
+    st.caption(f"Provider: {ai_rca_report.get('provider', 'local')} | Model: {ai_rca_report.get('model', 'deterministic')}")
     st.info(ai_rca_report["executive_summary"])
 
     st.markdown("### Business Impact")
